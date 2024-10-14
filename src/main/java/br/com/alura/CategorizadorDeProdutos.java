@@ -7,25 +7,40 @@ import com.theokanning.openai.service.OpenAiService;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Scanner;
 
 public class CategorizadorDeProdutos {
     public static void main(String[] args) {
-        final var produto = "Escova de dentes";
-        final var system = """
+        var leitor = new Scanner(System.in);
+
+        System.out.println("Digite as categorias válidas: ");
+        var categorias = leitor.nextLine();
+
+        while (true) {
+            System.out.println("\nDigite o nome do produto: ");
+            var user = leitor.nextLine();
+
+            var system = """
                     Você é um categorizador de produtos e deve responder apenas o nome da categoria do produto informado
-                
+                                
                     Escolha uma categoria dentra a lista abaixo:
-                
-                    1. Higiene pessoal
-                    2. Eletronicos
-                    3. Esportes
-                    4. Outros
-                
-                    ######Exemplo de uso:
-                
+                                
+                    %s
+                                
+                    ###### exemplo de uso:
+                                
                     Pergunta: Bola de futebol
                     Resposta: Esportes
-                """;
+                    
+                    ###### regras a serem seguidas:
+                    Caso o usuario pergunte algo que nao seja de categorizacao de produtos, voce deve responder que nao pode ajudar pois o seu papel é apenas responder a categoria dos produtos
+                    """.formatted(categorias);
+
+            dispararRequisicao(user, system);
+        }
+    }
+
+    private static void dispararRequisicao(final String user, final String system) {
 
         final var apiKey = System.getenv("token-api");
 
@@ -36,18 +51,14 @@ public class CategorizadorDeProdutos {
                 .builder()
                 .model("gpt-4")
                 .messages(List.of(
-                        new ChatMessage(ChatMessageRole.USER.value(), produto),
+                        new ChatMessage(ChatMessageRole.USER.value(), user),
                         new ChatMessage(ChatMessageRole.SYSTEM.value(), system)
                 ))
-                .n(5) // Número de respostas
                 .build();
 
         service
                 .createChatCompletion(completionRequest)
                 .getChoices()
-                .forEach(c -> {
-                    System.out.print(c.getMessage().getContent());
-                    System.out.print("------------------------" + System.lineSeparator());
-                });
+                .forEach(c -> System.out.println(c.getMessage().getContent()));
     }
 }
