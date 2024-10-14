@@ -10,9 +10,10 @@ import java.util.List;
 public class TestaIntegracao {
     public static void main(String[] args) {
         final var user = "Gere 5 produtos";
-        final var system = "Você é um gerador de produtos fictícios para um e-commerce e deve gerar apenas o nome dos produtos solicitados pelo usuário.";
+        final var system = "Você é um gerador de produtos fictícios para um e-commerce e deve gerar apenas o nome doss produtos solicitados pelo usuário.";
 
-        final var service = new OpenAiService("your_token");
+        final var apiKey = System.getenv("token-api");
+        final var service = new OpenAiService(apiKey);
 
         final var completionRequest = ChatCompletionRequest
                 .builder()
