@@ -20,6 +20,13 @@
             <artifactId>service</artifactId>
             <version>0.18.2</version>
         </dependency>
+
+        <!--projeto que faz a contagem de tokens em determinada frase ou string-->
+        <dependency>
+            <groupId>com.knuddels</groupId>
+            <artifactId>jtokkit</artifactId>
+            <version>0.6.1</version>
+        </dependency>
     </dependencies>
 
 </project>
