@@ -5,6 +5,8 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.completion.chat.ChatMessageRole;
 import com.theokanning.openai.service.OpenAiService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,7 +16,9 @@ import java.util.Arrays;
 
 public class AnaliseDeSentimentos {
 
-    public static void main(String[] args) {
+    private static final Logger logger = LoggerFactory.getLogger(AnaliseDeSentimentos.class);
+
+    public static void main(String[] args) throws InterruptedException {
         try {
             var promptSistema = """
                     Você é um analisador de sentimentos de avaliações de produtos.
@@ -38,7 +42,7 @@ public class AnaliseDeSentimentos {
                     .toArray(String[]::new);
 
             for (String arquivo : arquivosDeAvaliacoes) {
-                System.out.println("Analisando o arquivo: " + arquivo);
+                logger.info("Analisando o arquivo: {}", arquivo);
                 var promptUsuario = carregarArquivo(arquivo);
 
                 var request = ChatCompletionRequest
@@ -61,14 +65,21 @@ public class AnaliseDeSentimentos {
                         .getChoices().get(0).getMessage().getContent();
 
                 salvarAnalise(arquivo, resposta);
-                System.out.println("Analise salva com sucesso!");
+                logger.info("Analise salva com sucesso!");
             }
         } catch (OpenAiHttpException ex) {
             var errorCode = ex.statusCode;
             switch (errorCode) {
-                case 401 ->  throw new RuntimeException("Erro com a chave da API!", ex);
-                case 500, 503 -> throw new RuntimeException("Erro com o servidor da API!", ex);
-                default -> System.out.println("Erro desconhecido: " + ex.getMessage());
+                case 401 -> throw new RuntimeException("Erro com a chave da API!", ex);
+                case 429 -> {
+                    logger.warn("Limite de requisições atingido! Aguarde 1 minuto para continuar.");
+                    Thread.sleep(1000 * 5);
+                }
+                case 500, 503 -> {
+                    logger.warn("API fora do Ar! Aguarde 1 minuto para continuar.");
+                    Thread.sleep(1000 * 5);
+                }
+                default -> logger.error("Erro desconhecido: {}", ex.getMessage());
             }
         } catch (Exception e) {
             throw new RuntimeException("Erro ao analisar os sentimentos!", e);
@@ -78,7 +89,7 @@ public class AnaliseDeSentimentos {
     private static String carregarArquivo(final String arquivo) {
         try {
             var path = Path.of("src/main/resources/avaliacoes/avaliacoes-" + arquivo + ".txt");
-            return Files.readAllLines(path).toString();
+            return String.join("\n", Files.readAllLines(path));
         } catch (Exception e) {
             throw new RuntimeException("Erro ao carregar o arquivo!", e);
         }
