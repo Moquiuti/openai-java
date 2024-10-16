@@ -1,5 +1,6 @@
 package br.com.alura;
 
+import com.theokanning.openai.OpenAiHttpException;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.completion.chat.ChatMessageRole;
@@ -61,6 +62,13 @@ public class AnaliseDeSentimentos {
 
                 salvarAnalise(arquivo, resposta);
                 System.out.println("Analise salva com sucesso!");
+            }
+        } catch (OpenAiHttpException ex) {
+            var errorCode = ex.statusCode;
+            switch (errorCode) {
+                case 401 ->  throw new RuntimeException("Erro com a chave da API!", ex);
+                case 500, 503 -> throw new RuntimeException("Erro com o servidor da API!", ex);
+                default -> System.out.println("Erro desconhecido: " + ex.getMessage());
             }
         } catch (Exception e) {
             throw new RuntimeException("Erro ao analisar os sentimentos!", e);
